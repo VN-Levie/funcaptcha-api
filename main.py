@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from util.log import logger
 from util.model_support_fetcher import ModelSupportFetcher
-
+from count_fallen_pins import count_fallen_pins
 from pathlib import Path
 MAP_FILE = Path("question_model_map.json")
 UNMAPPED_QUESTIONS_FILE = Path("unmapped_questions.txt")
@@ -142,7 +142,48 @@ async def get_task_result(payload: dict):
             "solution": task["solution"],
             "taskId": task_id
         }
+    # Nếu câu hỏi là dạng fallen pins
+    if "fallen pins" in task["question"].lower():
+        from PIL import Image
+        from io import BytesIO
+        import base64
 
+        # Decode ảnh
+        base64_data = task["image"].split(",")[1]
+        img = Image.open(BytesIO(base64.b64decode(base64_data)))
+
+        # Tách từng ảnh
+        tiles = [img.crop((i*200, 0, (i+1)*200, 200)) for i in range(5)]
+        number_img = img.crop((0, 200, 200, 400))
+
+        # OCR để đọc số
+        import pytesseract
+        text = pytesseract.image_to_string(number_img, config="--psm 7 digits")
+        target = int(''.join(filter(str.isdigit, text)) or -1)
+
+        # Đếm và so khớp
+        for idx, tile in enumerate(tiles):
+            count = count_fallen_pins(tile)
+            if count == target:
+                task["solution"]["objects"] = [idx]
+                task["status"] = "ready"
+                return {
+                    "errorId": 0,
+                    "errorCode": "",
+                    "status": "ready",
+                    "solution": task["solution"],
+                    "taskId": task_id
+                }
+        # Không có ảnh khớp
+        task["status"] = "error"
+        task["solution"]["objects"] = []
+        return {
+            "errorId": 1,
+            "errorCode": "NO_MATCHING_IMAGE",
+            "status": "error",
+            "solution": task["solution"],
+            "taskId": task_id
+        }
     # Ánh xạ câu hỏi sang model name
     mapped_question = map_question_to_model(task["question"])
     print(f"[DEBUG] 🔁 Câu hỏi được ánh xạ thành model: {mapped_question}")
