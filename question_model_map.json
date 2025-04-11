@@ -1,0 +1,27 @@
+[
+    {
+      "keywords": ["pointing at the shortest road"],
+      "model": "3d_rollball_objects_cv"
+    },
+    {
+      "keywords": ["rollball"],
+      "model": "3d_rollball_objects"
+    },
+    {
+      "keywords": ["red striped pins", "overlap the boat"],
+      "model": "coordinatesmatch"
+    },
+    {
+      "keywords": ["match the number", "fallen pins"],
+      "model": "counting"
+    },
+    {
+      "keywords": ["dice adding up to"],
+      "model": "dice_pair"
+    },
+    {
+      "keywords": ["connect the icons"],
+      "model": "icon_connect"
+    }
+  ]
+  
